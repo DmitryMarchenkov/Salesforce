@@ -1,6 +1,6 @@
 public class CalculateBonuses {
 private List<Timelog_Entry__c> timeLogs;
-Decimal sumOvertime = 0;
+private Decimal summOvertime = 0;
 
 	public String calcBonuse(Resource__c resource) {
 		if (!resource.isFired__c) {
@@ -11,43 +11,44 @@ Decimal sumOvertime = 0;
 			];
 
 			if (timeLogs.isEmpty()) {
-				return 'A-HA-HA. Resource: ' + resource + ' doesn\'t have timelogs';	
+				throw new ResourceDoesntHaveTimelogs('Resource: ' + resource + ' doesn\'t have timelogs');
 			} 
 			
 			return calculateOvertime(resource);
 
 		} else {
-			throw new ResourceIsFiredException('A-HA-HA. Resource: ' + resource + ' is fired.');
+			throw new ResourceIsFiredException('Resource: ' + resource + ' is fired.');
 		}
 	}
 
 	public String calculateOvertime(Resource__c resource) {
-		List<ResourcePermission__c> resPermisions = getResourcePermissionByResource(resource);
+		List<ResourcePermission__c> resourcePermisions = getResourcePermissionByResource(resource);
 
 		for(Timelog_Entry__c timeLog : timeLogs) {
-			for(ResourcePermission__c resPerm : resPermisions) {
-				if(timeLog.Project__c == resPerm.Project__c) {
-					resPerm.Overtime_Hours__c = timeLog.Working_Hours__c - resPerm.Project__r.Contract_Time__c;
+			for(ResourcePermission__c resourcePermision : resourcePermisions) {
+				if(timeLog.Project__c == resourcePermision.Project__c) {
+					resourcePermision.Overtime_Hours__c = timeLog.Working_Hours__c - resourcePermision.Project__r.Contract_Time__c;
 				}
 			}
 		}
-		update resPermisions;
+		update resourcePermisions;
 		
-		for(ResourcePermission__c resPerm : resPermisions) {
-			sumOvertime += resPerm.Overtime_Hours__c * resPerm.Project__r.OverTime_Rate__c;
+		for(ResourcePermission__c resourcePermision : resourcePermisions) {
+			summOvertime += resourcePermision.Overtime_Hours__c * resourcePermision.Project__r.OverTime_Rate__c;
 		}
 
-		return sumOvertime.toPlainString();
+		return summOvertime.toPlainString();
 	}
 
 	private List<ResourcePermission__c> getResourcePermissionByResource(Resource__c resource) {
-		List<ResourcePermission__c> resPermis = [
+		List<ResourcePermission__c> resourcePermission = [
 			SELECT Id, Project__c, Project__r.OverTime_Rate__c, Project__r.Contract_Time__c
 			FROM ResourcePermission__c
 			WHERE Resource__c = :resource.Id
 		];
-		return resPermis;
+		return resourcePermission;
 	}
 
 	public class ResourceIsFiredException extends Exception{}
+	public class ResourceDoesntHaveTimelogs extends Exception{}
 }
