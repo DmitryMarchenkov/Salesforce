@@ -1,0 +1,124 @@
+<apex:page controller="MainProjectPage" sidebar="false" showHeader="true" docType="HTML-5.0">
+    <div id="wrapper">
+        <apex:pageBlock id="pageBlockWrapper" mode="maindetail">
+            <div id="sideBar">
+                <apex:form >
+                    <div>    
+                        <apex:commandButton value="Main" action="{!mainButtonAction}" reRender="pageBlockWrapper"/> 
+                    </div>
+                    <div>    
+                        <apex:commandButton value="Schedule" action="{!scheduleButtonAction}" reRender="pageBlockWrapper"/> 
+                    </div>
+                    <div>    
+                        <apex:commandButton value="Materials" action="{!materialsButtonAction}" reRender="pageBlockWrapper"/> 
+                    </div>
+               </apex:form>
+            </div>  
+           
+        <div id="content">
+            <apex:form id="contentForm">
+                <apex:pageBlock rendered="{!mainButtonFlag}" id="mainButtonForm" mode="maindetail">
+                    <div id="top">
+                        <H1>Welcome to Softheme intern school 2016</H1>
+                    </div>
+
+                    <apex:image url="/servlet/servlet.FileDownload?file={!attachment.Id}"/>
+
+                    <div id="bottom">                      
+                        <apex:inputTextarea value="{!note.Note__c}"/>
+                    </div>                 
+                </apex:pageBlock>
+            </apex:form>
+                
+                <apex:pageBlock rendered="{!scheduleButtonFlag}" id="scheduleButtonForm" mode="maindetail">
+                    <div id="top">
+                        <H1>SCHEDULE</H1>
+                    </div>
+                    
+                    <div id="scheduleContent"> 
+                        <apex:pageMessages ></apex:pageMessages>
+
+                        <div id="scheduleContentLeft"> 
+                            <apex:form >
+                                <apex:outputLabel value="Schedule Date "  for="scheduleDateShowOnPage"/>
+                                <apex:input type="date" value="{!scheduleDate}" required="true" id="scheduleDateShowOnPage"/>
+                                <apex:commandButton value="Show Schedule" action="{!showSchedule}" reRender="pageBlockWrapper"/>
+
+                                <apex:commandButton value="Add Schedule" action="{!addAttachment}" rendered="{!addAttachmentFlag}" reRender="pageBlockWrapper"/>
+                            </apex:form>
+
+
+                            <apex:pageBlockSection rendered="{! NOT addAttachmentFlag }">           
+                                <apex:form >                                                      
+                                    <apex:actionRegion >    
+                                        <apex:outputLabel value="Date"  for="sheduledate"/>
+                                        <apex:inputField value="{!schedule.ScheduleDate__c}" id="sheduledate"/>                            
+                                        <apex:commandButton value="Save" action="{!UploadFileAttachmentSchedule}"/>           
+                                    </apex:actionRegion>  
+                                    <apex:inputfile value="{!attachedFile.body}" filename="{!attachedFile.Name}" />
+                                </apex:form>
+                            </apex:pageBlockSection>
+                        </div>
+                            
+                        <div id="scheduleContentLeft">
+                            <apex:image url="/servlet/servlet.FileDownload?file={!attachment.Id}" rendered="{!scheduleShow }"/>
+                        </div>                                           
+                    </div>                
+                </apex:pageBlock>
+                
+            
+            <apex:pageBlock rendered="{!materialsButtonFlag}" id="materialsButtonForm" mode="maindetail">
+                <apex:form id="materialsForm">
+                    <div id="top">
+                        <H1>MATERIALS</H1>
+                    </div>
+
+                    <div>                                               
+                        <div>
+                            <apex:selectList multiselect="false" size="1" value="{!selectedValue}">
+                                <apex:actionSupport event="onchange" action="{!showMaterials}" reRender="materialsForm"/>
+                                <apex:selectOptions value="{!statusOptions}"/>
+                            </apex:selectList>
+                        </div>
+
+                        <div>
+                            <table>
+                                <apex:repeat value="{!materials}" var="material">
+                                    <tr>
+                                        <td>
+                                            <apex:outputText value="{!material.Name}"/>
+                                        </td>
+                                        <td>
+                                            <apex:outputText value="{!materialsWithAttachment[material.Id]}"/>
+                                        </td>
+                                        <td>
+                                            <apex:outputLink value="{!URLFOR($Action.Attachment.Download, materialsWithAttachment[material.Id].id)}" target="_blank">
+                                                Download
+                                            </apex:outputLink>
+                                        </td>
+                                    </tr>
+                                    
+                                </apex:repeat>
+                            </table>
+                        </div> 
+                    </div> 
+                    <apex:commandButton value="Add Material" action="{!addAttachment}" rendered="{!addAttachmentFlag}" reRender="pageBlockWrapper"/>
+                </apex:form>
+
+                <apex:pageBlockSection rendered="{! NOT addAttachmentFlag }">           
+                    <apex:form >                                                      
+                        <apex:actionRegion >    
+                            <apex:outputLabel value="Name"  for="materialName"/>
+                            <apex:inputField value="{!material.Name}" id="materialName"/>
+                            <apex:outputLabel value="Type"  for="materialTheme"/>
+                            <apex:inputField value="{!material.Theme__c}" id="materialTheme"/>                            
+                            <apex:commandButton value="Save" action="{!UploadFileAttachmentMaterial}"/>           
+                        </apex:actionRegion>  
+                        <apex:inputfile value="{!attachedFile.body}" filename="{!attachedFile.Name}" />
+                    </apex:form>
+                </apex:pageBlockSection>
+            </apex:pageBlock>                                
+        </div>
+        </apex:pageBlock>
+    </div>
+</apex:page>
