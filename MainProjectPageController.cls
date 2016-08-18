@@ -12,11 +12,13 @@ public class MainProjectPageController {
     public Boolean scheduleShow {get; set;}
     public Boolean materialsButtonFlag {get; set;}
     public Boolean addAttachmentFlag {get; set;}
+    public Boolean addMaterialsFlag {get; set;}
     public Date scheduleDate {get; set;}
     
     public Attachment attachedFile {get; set;}
     public Schedule__c schedule {get; set;}
     public Material__c material {get; set;}
+    private List<Notation__c> notations;
     public Notation__c note {get; set;}
 
     public MainProjectPageController() {
@@ -25,42 +27,50 @@ public class MainProjectPageController {
         scheduleButtonFlag = false;
         materialsButtonFlag = false; 
         addAttachmentFlag = true;
+        addMaterialsFlag = true;
 
         getAttachmentByDate(null);
     
-        note = [SELECT Note__c FROM Notation__c LIMIT 1].[0];
+        notations = [SELECT Note__c FROM Notation__c LIMIT 1];
+        note = notations[0];
         schedule = new Schedule__c();
         material = new Material__c();
         attachedFile = New Attachment();
         scheduleDate = Date.today();
-        autoRun();
+        
     }
 
-    public PageReference mainButtonAction() {    
-        addAttachmentFlag = true;
+    public PageReference mainButtonAction() {  
+        getAttachmentByDate(null); 
+        changeFlags();        
         mainButtonFlag = true;
         scheduleButtonFlag = false;
-        materialsButtonFlag = false;
-        scheduleShow = false;        
+        materialsButtonFlag = false;      
         return null;
     }
 
     public PageReference scheduleButtonAction() {  
-        addAttachmentFlag = true;
+        changeFlags();
         mainButtonFlag = false;
         scheduleButtonFlag = true;
-        materialsButtonFlag = false;
-        scheduleShow = false;
+        materialsButtonFlag = false;       
         return null;
     }
 
     public PageReference materialsButtonAction() {   
-        addAttachmentFlag = true;
+        changeFlags();
+        getPicklistValues();
+        showMaterials();      
         mainButtonFlag = false;
         scheduleButtonFlag = false;
         materialsButtonFlag = true;
-        scheduleShow = false;
         return null;
+    }
+
+    private void changeFlags(){
+        addAttachmentFlag = true;
+        addMaterialsFlag = true;
+        scheduleShow = false;
     }
     
     public void showSchedule() {
@@ -71,44 +81,61 @@ public class MainProjectPageController {
     public PageReference addAttachment(){
         addAttachmentFlag = false;
         scheduleShow = false;
+
+        if(addMaterialsFlag == true) {
+            addMaterialsFlag = false;
+        } else {
+            addMaterialsFlag = true;
+        }
         return null; 
     }  
 
-    public void UploadFileAttachmentSchedule() {        
-        insert schedule;
-        attachedFile.ParentId = schedule.Id;
-        insert attachedFile;  
+    public void UploadFileAttachmentSchedule() {  
+        if(attachedFile.Name == null) {
+            addErrorMessage('You can\'t add schedule without attachment!');
+        } else {
+            List<Schedule__c> scheduleToDelete = [SELECT Id FROM Schedule__c WHERE ScheduleDate__c =: scheduleDate];
+            delete scheduleToDelete;
+            insert schedule; 
+            attachedFile.ParentId = schedule.Id;
+            insert attachedFile;  
+            schedule = new Schedule__c();
+            attachedFile = New Attachment();          
+        } 
         addAttachmentFlag = true;
     }
 
-    public void UploadFileAttachmentMaterial() {        
-        insert material;
-        attachedFile.ParentId = material.Id;
-        insert attachedFile;  
+    public void UploadFileAttachmentMaterial() {  
+
+        if(attachedFile.Name == null) {
+            addErrorMessage('You can\'t add material without attachment!');
+        } else {
+            insert material; 
+            attachedFile.ParentId = schedule.Id;
+            insert attachedFile;  
+            material = new Material__c();
+            attachedFile = New Attachment();          
+        } 
         addAttachmentFlag = true;
     }
 
     private void getAttachmentByDate(Date scheduleDate) {
+        List<Schedule__c> sched;
         if(scheduleDate == null) {
-            scheduleDate = Date.today();
+            sched = [SELECT Id FROM Schedule__c WHERE ScheduleDate__c = TODAY LIMIT 1];
+        } else {
+            sched = [SELECT Id FROM Schedule__c WHERE ScheduleDate__c = :scheduleDate LIMIT 1];
         }
 
         try {
-            List<Schedule__c> sched = [SELECT Id FROM Schedule__c WHERE ScheduleDate__c = :scheduleDate LIMIT 1];
             attachment = [SELECT Id, ParentId FROM Attachment WHERE ParentId = :sched[0].Id ];
             scheduleShow = true;            
         } catch(Exception e) {
-            ApexPages.Message errorMessage = new ApexPages.Message(ApexPages.Severity.FATAL, 'Schedule on this date doesn\'t exist!');
-            System.debug(e);
-            ApexPages.addMessage(errorMessage);
+            addErrorMessage('Schedule on this date doesn\'t exist!');
         }
     }
 
-    private void saveAttachment() {
-
-    }
-
-    public void autoRun()
+    public void getPicklistValues()
     {
         Schema.DescribeFieldResult statusFieldDescription = Material__c.Theme__c.getDescribe();
         statusOptions = new list<SelectOption>();
@@ -129,8 +156,13 @@ public class MainProjectPageController {
             materialsIds.add(material.Id);
         }
 
-        for(Attachment attachment: [SELECT Id, ParentId FROM Attachment WHERE ParentId IN :materialsIds]) {
+        for(Attachment attachment: [SELECT Id, ParentId, Name FROM Attachment WHERE ParentId IN :materialsIds]) {
             materialsWithAttachment.put(attachment.ParentId, attachment);
         }
+    }
+
+    private void addErrorMessage(String mess) {
+        ApexPages.Message errorMessage = new ApexPages.Message(ApexPages.Severity.FATAL, mess);
+        ApexPages.addMessage(errorMessage);
     }
 }
