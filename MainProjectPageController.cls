@@ -15,7 +15,14 @@ public class MainProjectPageController {
     public Boolean addMaterialsFlag {get; set;}
     public Date scheduleDate {get; set;}
     
-    public Attachment attachedFile {get; set;}
+    public Attachment attachedFile {
+          get {
+              if (attachedFile == null)
+                attachedFile = new Attachment();
+              return attachedFile;
+            }
+          set;
+          }
     public Schedule__c schedule {get; set;}
     public Material__c material {get; set;}
     private List<Notation__c> notations;
@@ -32,10 +39,12 @@ public class MainProjectPageController {
         getAttachmentByDate(null);
     
         notations = [SELECT Note__c FROM Notation__c LIMIT 1];
-        note = notations[0];
+        if(notations.size() > 0) {
+            note = notations[0];
+        }
         schedule = new Schedule__c();
         material = new Material__c();
-        attachedFile = New Attachment();
+        //attachedFile = New Attachment();
         scheduleDate = Date.today();
         
     }
@@ -91,7 +100,7 @@ public class MainProjectPageController {
     }  
 
     public void UploadFileAttachmentSchedule() {  
-        if(attachedFile.Name == null) {
+        if(attachedFile.Body == null) {
             addErrorMessage('You can\'t add schedule without attachment!');
         } else {
             List<Schedule__c> scheduleToDelete = [SELECT Id FROM Schedule__c WHERE ScheduleDate__c =: scheduleDate];
@@ -105,18 +114,26 @@ public class MainProjectPageController {
         addAttachmentFlag = true;
     }
 
-    public void UploadFileAttachmentMaterial() {  
+    public void saveNotation() {
+        update notations;
+    }
 
-        if(attachedFile.Name == null) {
-            addErrorMessage('You can\'t add material without attachment!');
+    public void UploadFileAttachmentMaterial() {  
+        if(attachedFile.Body == null) {
+            addErrorMessage('You can\'t add schedule without attachment!');
         } else {
             insert material; 
-            attachedFile.ParentId = schedule.Id;
+            attachedFile.ParentId = material.Id;
             insert attachedFile;  
-            material = new Material__c();
             attachedFile = New Attachment();          
         } 
         addAttachmentFlag = true;
+    }
+
+    public void deleteMaterial() {
+        Id materrId = Apexpages.currentPage().getParameters().get('matId');
+        List<Material__c> materialsToDelete = [SELECT Id FROM Material__c WHERE Id = :materrId];
+        delete materialsToDelete;
     }
 
     private void getAttachmentByDate(Date scheduleDate) {
