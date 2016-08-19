@@ -1,5 +1,6 @@
-<apex:page controller="MainProjectPage" sidebar="false" showHeader="true" docType="HTML-5.0">
-    <button onclick="location.href='/secur/logout.jsp'">
+<apex:page controller="MainProjectPageController" sidebar="false" showHeader="{!$Permission.Manage_Materials}" docType="HTML-5.0">
+    <apex:stylesheet value="{!URLFOR($Resource.styles)}"/>
+    <button id="logoutBtn" onclick="location.href='/secur/logout.jsp'">
         Logout
     </button>
     <div id="wrapper">
@@ -25,13 +26,14 @@
                         <H1>Welcome to Softheme intern school 2016</H1>
                     </div>
 
-                    <apex:image url="/servlet/servlet.FileDownload?file={!attachment.Id}" rendered="{! If(attachment.Id !=null ,true,false) }"/>
+                    <apex:image styleClass="mainImg" url="/servlet/servlet.FileDownload?file={!attachment.Id}" rendered="{! If(attachment.Id !=null ,true,false) }"/>
                     <apex:outputText value="Schedule on this date doesn't exist!" rendered="{! If(attachment.Id ==null ,true, false) }"/>
 
                     <div id="bottom">  
                         <apex:outputLabel value="Notation" for="notation"/>                    
                         <apex:inputTextarea value="{!note.Note__c}" id="notation" />
-                    </div>                 
+                    </div>  
+                    <apex:commandButton value="Save Notation" action="{!saveNotation}" reRender="contentForm"/>               
                 </apex:pageBlock>
             </apex:form>
                 
@@ -53,12 +55,12 @@
                             </apex:form>
 
 
-                            <apex:pageBlockSection rendered="{! NOT addAttachmentFlag }">           
+                            <apex:pageBlockSection rendered="{! NOT (addAttachmentFlag )}">           
                                 <apex:form >                                                      
                                     <apex:actionRegion >    
                                         <apex:outputLabel value="Date"  for="sheduledate"/>
                                         <apex:inputField value="{!schedule.ScheduleDate__c}" id="sheduledate"/>     
-                                        <apex:commandButton value="Save" action="{!UploadFileAttachmentSchedule}" reRender="pageBlockWrapper"/>
+                                        <apex:commandButton value="Save" action="{!UploadFileAttachmentSchedule}"/>
                                     </apex:actionRegion>  
                                     <apex:inputfile value="{!attachedFile.body}" filename="{!attachedFile.Name}" />
                                 </apex:form>
@@ -86,8 +88,15 @@
                             </apex:selectList>
                         </div>
                         <apex:pageMessages ></apex:pageMessages>
+                        <apex:pageBlock id="blockMaterials" mode="maindetail" rendered="{!addMaterialsFlag}">
                         <div id="materialsTable">
                             <table>
+                                <tr id="firstRow">
+                                    <th>Name</th>
+                                    <th>Resource</th>
+                                    <th>Download</th>
+                                    <th>Delete</th>
+                                </tr>
                                 <apex:repeat value="{!materials}" var="material" rendered="{!addMaterialsFlag}">
                                     <tr>
                                         <td>
@@ -101,29 +110,38 @@
                                                 Download
                                             </apex:outputLink>
                                         </td>
+                                        <td>
+                                            <apex:commandButton value="Delete" action="{!URLFOR($Action.Campaign.Delete, material.Id)}" reRender="materialsForm" rendered="{!$Permission.Manage_Materials}"/>
+                                            <apex:outputText value="You can not delete record" rendered="{! NOT $Permission.Manage_Materials}"/>
+                                        </td>
                                     </tr>
                                 </apex:repeat>
                             </table>
                         </div> 
+                        </apex:pageBlock>
                     </div> 
                     <apex:commandButton value="Add Material" action="{!addAttachment}" rendered="{!AND(addMaterialsFlag,$Permission.Manage_Materials)}" reRender="pageBlockWrapper"/>
                     <apex:commandButton value="Cancel" action="{!addAttachment}" rendered="{! NOT addMaterialsFlag}" reRender="pageBlockWrapper"/>
                 </apex:form>
-
-                <apex:pageBlockSection rendered="{! NOT addMaterialsFlag}">           
-                    <apex:form >                                                      
-                        <apex:actionRegion >    
-                            <apex:outputLabel value="Name"  for="materialName"/>
-                            <apex:inputField value="{!material.Name}" id="materialName" required="true"/>
-                            <apex:outputLabel value="Theme"  for="materialTheme"/>
-                            <apex:inputField value="{!material.Theme__c}" id="materialTheme" required="true"/>                            
-                            <apex:commandButton value="Save" action="{!UploadFileAttachmentMaterial}" reRender="pageBlockWrapper"/>           
-                        </apex:actionRegion>  
-                        <apex:inputfile value="{!attachedFile.body}" filename="{!attachedFile.Name}" />
-                    </apex:form>
-                </apex:pageBlockSection>
+                            <apex:pageBlockSection rendered="{! NOT addMaterialsFlag}">           
+                                <apex:form >                                                      
+                                    <apex:actionRegion >    
+                                        <apex:outputLabel value="Name"  for="mat"/>
+                                        <apex:inputField value="{!material.Name}" id="mat" required="true"/>  
+                                        <apex:outputLabel value="Theme"  for="materialTheme"/>   
+                                        <apex:inputField value="{!material.Theme__c}" id="materialTheme" required="true"/>
+                                        <apex:commandButton value="Save" action="{!UploadFileAttachmentMaterial}"/>
+                                    </apex:actionRegion>  
+                                    <apex:inputfile value="{!attachedFile.body}" filename="{!attachedFile.Name}" />
+                                </apex:form>
+                            </apex:pageBlockSection>
             </apex:pageBlock>                                
         </div>
         </apex:pageBlock>
     </div>
+    <script>
+        window.onload = function(){
+            window.scrollTo(0,0);
+        }
+    </script>
 </apex:page>
