@@ -44,7 +44,7 @@ public class MainProjectPageController {
         }
         schedule = new Schedule__c();
         material = new Material__c();
-        //attachedFile = New Attachment();
+        attachedFile = New Attachment();
         scheduleDate = Date.today();
         
     }
